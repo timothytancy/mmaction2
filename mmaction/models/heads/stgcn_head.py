@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import normal_init
+import numpy as np
 
 from ..builder import HEADS
 from .base import BaseHead
@@ -32,9 +33,9 @@ class STGCNHead(BaseHead):
                  spatial_type='avg',
                  num_person=2,
                  init_std=0.01,
-                 soften_targets=False,
+                 soften_targets=True,
                  temperature = 1,
-                 ema_window = 10,
+                 ma_window = 10,
                  **kwargs):
         super().__init__(num_classes, in_channels, loss_cls, **kwargs)
 
@@ -44,8 +45,7 @@ class STGCNHead(BaseHead):
         self.num_person = num_person
         self.init_std = init_std
         self.soften_targets = soften_targets
-        self.temperature = temperature
-        self.ema_window = ema_window
+        self.ma_window = ma_window
 
         self.pool = None
         if self.spatial_type == 'avg':
@@ -56,7 +56,11 @@ class STGCNHead(BaseHead):
             raise NotImplementedError
 
         self.fc = nn.Conv2d(self.in_channels, self.num_classes, kernel_size=1)
-        self.tensor_queue = EMAPredictions(10, 0.9, torch.zeros([self.ema_window, 64, self.num_classes]))  
+        self.st_handler = SoftTargetHandler(window=self.ma_window, 
+                                            queue=torch.zeros([self.ma_window, 64, self.num_classes]), 
+                                            temperature=temperature,
+                                            ma=torch.empty(64, self.num_classes).fill_(1/self.num_classes)
+                                            )  
         # FIXME: hardcoded number of instances, but need to fix this later on
 
     def init_weights(self):
@@ -74,46 +78,56 @@ class STGCNHead(BaseHead):
         x = x.view(x.shape[0], -1)
 
         if self.soften_targets:
-            x = self.soften_preds(x, ema, self.temperature)
-        self.tensor_queue.enqueue_tensor(x)
-        ema = self.tensor_queue.numpy_ewma_vectorized_v2()
+            self.st_handler.soften_preds(x)
+            self.st_handler.update_ma()
+            x = self.st_handler.ma
+        
+            logging.debug(f"moving average softened preds: {x}")
             
         return x
     
-    def soften_preds(self, x, ema, temperature):
-        return torch.exp(x/temperature)/torch.exp(ema/temperature)
 
-class EMAPredictions():
-    def __init__(self, window, weight, queue):
+
+class SoftTargetHandler():
+    """
+    Class to handle everything relating to generating soft targets:
+        - Softening predictions
+        - Maintaining (exponential) ma of previous predictions
+    """
+    def __init__(self, window, queue, temperature, ma):
         self.window = window
-        self.weight = weight
         self.queue = queue
+        self.temperature = temperature
+        self.preds = None
+        self.ma = ma
         assert self.window == self.queue.size(dim=0)
 
-    def enqueue_tensor(self, x):
-        # RuntimeError: unsupported operation: some elements of the input tensor and the written-to tensor refer to a single memory location. Please clone() the tensor before performing the operation.
-        self.queue[:-1] = self.queue[1:]
-        self.queue[-1] = x
-        return self.queue
 
-    def numpy_ewma_vectorized_v2(self):
-        data = self.queue.detach().numpy()
-        alpha = 2 /(self.window + 1.0)
-        alpha_rev = 1-alpha
-        n = data.shape[0]
+    def update_ma(self):
+        # data = self.queue.detach().numpy()
+        # alpha = 2 /(self.window + 1.0)
+        # alpha_rev = 1-alpha
+        # n = data.shape[0]
 
-        pows = alpha_rev**(np.arange(n+1))
+        # pows = alpha_rev**(np.arange(n+1))
 
-        scale_arr = 1/pows[:-1]
-        offset = data[0]*pows[1:]
-        pw0 = alpha*alpha_rev**(n-1)
+        # scale_arr = 1/pows[:-1]
+        # offset = data[0]*pows[1:]
+        # pw0 = alpha*alpha_rev**(n-1)
 
-        mult = data*pw0*scale_arr
-        cumsums = mult.cumsum()
-        out = offset + cumsums*scale_arr[::-1]
-        logging.debug(f"EMA queue size: {out.size()}")
-        return out
-            
+        # mult = data*pw0*scale_arr
+        # cumsums = mult.cumsum()
+        # out = offset + cumsums*scale_arr[::-1]
+        # logging.debug(f"EMA queue size: {out.size()}")
+
+        queue = self.queue
+        self.queue = torch.cat((queue[1:], torch.unsqueeze(self.preds, dim=0)))
+        
+        self.ma = torch.mean(self.queue, dim=0)
+
+    def soften_preds(self, x):
+        self.preds = torch.exp(x/self.temperature)/torch.exp(self.ma/self.temperature) 
+        logging.debug(f"SOFTENED PRED DIMS: {self.preds.size()}")
             
     
         
