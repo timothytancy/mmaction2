@@ -105,11 +105,11 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
             if label is None:
                 raise ValueError('Label should not be None.')
             train = self.forward_train(keypoint, label, **kwargs)
-            logging.debug(f"forward_train: {train}")  #{'top1_acc': tensor(0.0156, dtype=torch.float64), 'top5_acc': tensor(0.0781, dtype=torch.float64), 'loss_cls': tensor(6.1427, grad_fn=<MulBackward0>)}
+            # logging.debug(f"forward_train: {train}")  #{'top1_acc': tensor(0.0156, dtype=torch.float64), 'top5_acc': tensor(0.0781, dtype=torch.float64), 'loss_cls': tensor(6.1427, grad_fn=<MulBackward0>)}
             return train
 
         test = self.forward_test(keypoint, **kwargs)
-        logging.debug(f"forward_test: {test}")
+        # logging.debug(f"forward_test: {test}")
         return test
 
     def extract_feat(self, skeletons):
@@ -122,7 +122,7 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
             torch.tensor: The extracted features.
         """
         x = self.backbone(skeletons)
-        logging.debug(f"extracting features: f{x.size()}")
+        # logging.debug(f"extracting features: f{x.size()}")
         return x
 
     def train_step(self, data_batch, optimizer, **kwargs):
@@ -153,9 +153,9 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         """
         skeletons = data_batch['keypoint']
         label = data_batch['label']
-        logging.debug(f"training skeletons size: {skeletons.size()}")
+        # logging.debug(f"training skeletons size: {skeletons.size()}")
 
-        logging.debug(f"training label: {label}")
+        # logging.debug(f"training label: {label}")
 
         label = label.squeeze(-1)
 
@@ -164,7 +164,7 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         loss, log_vars = self._parse_losses(losses)
         outputs = dict(
             loss=loss, log_vars=log_vars, num_samples=len(skeletons.data))
-        logging.debug(f"training outputs: {outputs}")
+        # logging.debug(f"training outputs: {outputs}")
         return outputs
 
     def val_step(self, data_batch, optimizer, **kwargs):
@@ -176,7 +176,7 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         """
         skeletons = data_batch['keypoint']
         label = data_batch['label']
-        logging.debug(f"validation label: {label}")
+        # logging.debug(f"validation label: {label}")
 
         losses = self(skeletons, label, return_loss=True)
 

@@ -94,7 +94,7 @@ class STGCNBlock(nn.Module):
         res = self.residual(x)
         x, adj_mat = self.gcn(x, adj_mat)
         x = self.tcn(x) + res
-        logging.debug(f"STGCNBlock: {x.size()}")
+        # logging.debug(f"STGCNBlock: {x.size()}")
 
         return self.relu(x), adj_mat
 
@@ -164,7 +164,7 @@ class ConvTemporalGraphical(nn.Module):
         x = x.view(n, self.kernel_size, kc // self.kernel_size, t, v)
         # k disappears after einsum (is this a pooling operation?)
         x = torch.einsum('nkctv,kvw->nctw', (x, adj_mat))  # sums elements along specified axis (einstein summation convention notation)
-        logging.debug(f"ConvTemporalGraphical: {x.size()}")
+        # logging.debug(f"ConvTemporalGraphical: {x.size()}")
 
         return x.contiguous(), adj_mat
 
@@ -282,7 +282,7 @@ class STGCN(nn.Module):
         for gcn, importance in zip(self.st_gcn_networks, self.edge_importance):
             x, _ = gcn(x, self.A * importance)
         
-        logging.debug(f"STGCN: {x.size()}")
+        # logging.debug(f"STGCN: {x.size()}")
 
 
         return x

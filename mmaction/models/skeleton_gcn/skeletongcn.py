@@ -15,6 +15,11 @@ class SkeletonGCN(BaseGCN):
         x = self.extract_feat(skeletons)
         output = self.cls_head(x)
         gt_labels = labels.squeeze(-1)
+        print(f"output: {output.size()}")
+        print(f"gt_labels: {gt_labels.size()}")
+
+        # soften labels
+        gt_labels = gt_labels * 0.6 + output * 0.4
         loss = self.cls_head.loss(output, gt_labels)
         losses.update(loss)
 

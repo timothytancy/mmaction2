@@ -3,12 +3,14 @@ model = dict(
     backbone=dict(
         type='STGCN',
         in_channels=3,
+        use_soft_tgts=True,
         edge_importance_weighting=True,
         graph_cfg=dict(layout='coco', strategy='spatial')),
     cls_head=dict(
         type='STGCNHead',
         num_classes=60,
         in_channels=256,
+        use_soft_tgts=True,
         loss_cls=dict(type='CrossEntropyLoss')),
     train_cfg=None,
     test_cfg=None)

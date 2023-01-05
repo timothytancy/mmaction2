@@ -29,11 +29,11 @@ class STGCNHead(BaseHead):
     def __init__(self,
                  num_classes,
                  in_channels,
+                 use_soft_tgts,
                  loss_cls=dict(type='CrossEntropyLoss'),
                  spatial_type='avg',
                  num_person=2,
                  init_std=0.01,
-                 soften_targets=True,
                  temperature = 1,
                  ma_window = 10,
                  **kwargs):
@@ -44,8 +44,13 @@ class STGCNHead(BaseHead):
         self.num_classes = num_classes
         self.num_person = num_person
         self.init_std = init_std
-        self.soften_targets = soften_targets
+        self.use_soft_tgts = use_soft_tgts
         self.ma_window = ma_window
+        self.temperature = temperature
+
+        self.tensor_queue = np.zeros((self.ma_window, 64, self.num_classes)) 
+        self.ma = np.full((64, self.num_classes), 1/self.num_classes)
+        self.prev_softened_x = None
 
         self.pool = None
         if self.spatial_type == 'avg':
@@ -54,13 +59,7 @@ class STGCNHead(BaseHead):
             self.pool = nn.AdaptiveMaxPool2d((1, 1))
         else:
             raise NotImplementedError
-
         self.fc = nn.Conv2d(self.in_channels, self.num_classes, kernel_size=1)
-        self.st_handler = SoftTargetHandler(window=self.ma_window, 
-                                            queue=torch.zeros([self.ma_window, 64, self.num_classes]), 
-                                            temperature=temperature,
-                                            ma=torch.empty(64, self.num_classes).fill_(1/self.num_classes)
-                                            )  
         # FIXME: hardcoded number of instances, but need to fix this later on
 
     def init_weights(self):
@@ -77,14 +76,40 @@ class STGCNHead(BaseHead):
         x = self.fc(x)
         x = x.view(x.shape[0], -1)
 
-        if self.soften_targets:
-            self.st_handler.soften_preds(x)
-            self.st_handler.update_ma()
-            x = self.st_handler.ma
-        
-            logging.debug(f"moving average softened preds: {x}")
+        if self.use_soft_tgts:
+
+            x = self.soften_targets(x)
+            # logging.debug(f"moving average softened preds: {x.size()}")
             
         return x
+
+    def soften_targets(self, x):
+        # """
+        # Takes in a tensor as input, and outputs softened distribution as an np array.
+        # """
+        x_np = x.detach().numpy()
+        x_exp = np.exp(x_np/self.temperature)
+        x_sum = np.repeat(np.sum(x_exp, axis=1)[:, np.newaxis], self.num_classes, axis=1) # sum over class dim then repeat again to match num_classes
+        out = x_exp/x_sum
+        
+        return torch.from_numpy(out).requires_grad_()
+     
+    def update_ma(self, x):
+        # prev_queue = self.tensor_queue.detach()
+        # self.tensor_queue = torch.cat((prev_queue[1:], torch.unsqueeze(x, dim=0)))
+        # ma = torch.mean(self.tensor_queue, dim=0)
+        
+        prev_queue = self.tensor_queue.copy()
+        new_queue = np.ones_like(prev_queue)
+        new_queue[:-1] = prev_queue[1:]
+        new_queue[-1] = x
+        self.tensor_queue = new_queue
+        # logging.debug(f"pushing new preds to queue: {self.tensor_queue[-1]}")
+        out = np.mean(self.tensor_queue, axis=0)
+
+        return torch.from_numpy(out).requires_grad_()
+        
+        
     
 
 
@@ -93,6 +118,8 @@ class SoftTargetHandler():
     Class to handle everything relating to generating soft targets:
         - Softening predictions
         - Maintaining (exponential) ma of previous predictions
+    Current issue with this class is that it seems to require the network to backpropagate all the way to the first iteration each time.
+    Best case is if we could just forget each previous iteration, and only store the output of the final layer. 
     """
     def __init__(self, window, queue, temperature, ma):
         self.window = window
@@ -120,14 +147,15 @@ class SoftTargetHandler():
         # out = offset + cumsums*scale_arr[::-1]
         # logging.debug(f"EMA queue size: {out.size()}")
 
-        queue = self.queue
-        self.queue = torch.cat((queue[1:], torch.unsqueeze(self.preds, dim=0)))
+        temp_queue = self.queue
+        queue_local = torch.cat((temp_queue[1:], torch.unsqueeze(self.preds, dim=0)))
+        self.queue = queue_local
         
-        self.ma = torch.mean(self.queue, dim=0)
+        ma = torch.mean(queue_local, dim=0)
+        return ma
 
     def soften_preds(self, x):
         self.preds = torch.exp(x/self.temperature)/torch.exp(self.ma/self.temperature) 
-        logging.debug(f"SOFTENED PRED DIMS: {self.preds.size()}")
             
     
         
