@@ -10,6 +10,20 @@ from .. import builder
 import logging
 logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
+class EMA():
+       def __init__(self, mu):
+           self.mu = mu
+           self.shadow = {}
+
+       def register(self, name, val):
+           self.shadow[name] = val.clone()
+
+       def __call__(self, name, x):
+           assert name in self.shadow
+           new_average = (1.0 - self.mu) * x + self.mu * self.shadow[name]
+           self.shadow[name] = new_average.clone()
+           return new_average
+
 class BaseGCN(nn.Module, metaclass=ABCMeta):
     """Base class for GCN-based action recognition.
 
@@ -36,6 +50,8 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
 
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
+        
+        self.ema = EMA(0.5)
 
         self.init_weights()
 
