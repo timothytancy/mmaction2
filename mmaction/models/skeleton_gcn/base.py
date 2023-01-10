@@ -52,6 +52,7 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         self.test_cfg = test_cfg
         
         self.ema = EMA(0.5)
+        self.current_epoch = 0
 
         self.init_weights()
 
