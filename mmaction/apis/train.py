@@ -12,7 +12,7 @@ from mmcv.runner import (DistSamplerSeedHook, EpochBasedRunner, OptimizerHook,
 from mmcv.runner.hooks import Fp16OptimizerHook
 
 from ..core import (DistEvalHook, EvalHook, OmniSourceDistSamplerSeedHook,
-                    OmniSourceRunner, AnnealingRunner)
+                    OmniSourceRunner)
 from ..datasets import build_dataloader, build_dataset
 from ..utils import (PreciseBNHook, build_ddp, build_dp, default_device,
                      get_root_logger)
@@ -230,7 +230,9 @@ def train_model(model,
     if cfg.omnisource:
         runner_kwargs = dict(train_ratio=train_ratio)
     runner.run(data_loaders, cfg.workflow, cfg.total_epochs, **runner_kwargs)
-    model.current_epoch = runner._epoch
+    if cfg.track_epochs:
+        logger.debug(f"epoch number: {runner._epoch}")
+        model.update_epoch(runner._epoch)
 
     if distributed:
         dist.barrier()

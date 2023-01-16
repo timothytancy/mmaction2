@@ -60,8 +60,7 @@ class STGCNHead(BaseHead):
         else:
             raise NotImplementedError
         self.fc = nn.Conv2d(self.in_channels, self.num_classes, kernel_size=1)
-        # FIXME: hardcoded number of instances, but need to fix this later on
-
+      
     def init_weights(self):
         normal_init(self.fc, std=self.init_std)
 
@@ -80,6 +79,7 @@ class STGCNHead(BaseHead):
 
             x = self.soften_targets(x)
             # logging.debug(f"moving average softened preds: {x.size()}")
+        
             
         return x
 

@@ -9,11 +9,12 @@ model = dict(
         type='STGCNHead',
         num_classes=60,
         in_channels=256,
-        use_soft_tgts=True,
+        use_soft_tgts=False,
         loss_cls=dict(type='CrossEntropyLoss')),
     train_cfg=None,
     test_cfg=None)
 
+track_epochs = True
 dataset_type = 'PoseDataset'
 ann_file_train = 'data/posec3d/ntu60_xsub_train.pkl'
 ann_file_val = 'data/posec3d/ntu60_xsub_val.pkl'

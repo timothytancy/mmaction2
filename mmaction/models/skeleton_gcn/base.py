@@ -11,19 +11,61 @@ import logging
 logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 class EMA():
-       def __init__(self, mu):
-           self.mu = mu
-           self.shadow = {}
+    def __init__(self, mu):
+        self.mu = mu
+        #    self.shadow = {}
+        self.cur_epoch_out = None
+        self.ema = None
+        self.is_last_iter = False
 
-       def register(self, name, val):
-           self.shadow[name] = val.clone()
+    # def register(self, name, val):
+        #    self.shadow[name] = val.clone()
+    def register(self, val):
+        logging.debug(f"updating outputs")
+        self.cur_epoch_out = torch.unsqueeze(val.clone(), 0)
 
-       def __call__(self, name, x):
-           assert name in self.shadow
-           new_average = (1.0 - self.mu) * x + self.mu * self.shadow[name]
-           self.shadow[name] = new_average.clone()
-           return new_average
+    def concat_output(self, x):
+        x_ = x.clone()
 
+        # if x not same size as self.output, pad tensor to match size. 
+        logging.debug(f"x size: {x_.size()[0]}")
+        logging.debug(f"prev sizes: {self.cur_epoch_out.size()[1]}")
+        
+        if x_.size()[0] != self.cur_epoch_out.size()[1]:
+            self.is_last_iter = True
+            tgt_len = self.cur_epoch_out.size()[1]
+            num_classes = self.cur_epoch_out.size()[-1]
+            logging.debug(f"num_classes: {num_classes}")
+            padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
+            logging.debug(f"x_ before padding: {x_.size()}")
+            logging.debug(f"padding: {padding.size()}")
+            x_ = torch.cat((x_, padding), dim=0)
+            
+        x_ = torch.unsqueeze(x_, 0)
+
+        # add latest batch output to cur_epoch_out (stacking along dim 0)
+        prev_out = self.cur_epoch_out.clone()
+        self.cur_epoch_out = torch.cat((prev_out, x_), 0)
+    
+    def roll_window(self):
+        if self.ema is None:
+            self.ema = self.cur_epoch_out
+        else:
+            new_average = (1.0 - self.mu) * self.cur_epoch_out + self.mu * self.ema
+            self.ema = new_average
+        self.cur_epoch_out = None
+        self.is_last_iter = False
+
+    # def __call__(self, name, x):
+        # assert name in self.shadow
+        # new_average = (1.0 - self.mu) * x + self.mu * self.shadow[name]
+        # self.shadow[name] = new_average.clone()
+        # return new_average
+
+        # for now, do not implement ema, just use the exact previous value
+    def __call__(self, idx):
+        return self.ema[idx]
+        
 class BaseGCN(nn.Module, metaclass=ABCMeta):
     """Base class for GCN-based action recognition.
 
