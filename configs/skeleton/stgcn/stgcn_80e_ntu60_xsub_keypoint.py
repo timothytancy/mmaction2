@@ -11,7 +11,7 @@ model = dict(
         in_channels=256,
         use_soft_tgts=False,
         loss_cls=dict(type='CrossEntropyLoss')),
-    train_cfg=None,
+    train_cfg=dict(burn_in=2),
     test_cfg=None)
 
 track_epochs = True

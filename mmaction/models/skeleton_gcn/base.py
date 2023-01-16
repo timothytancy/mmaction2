@@ -10,13 +10,14 @@ from .. import builder
 import logging
 logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
-class EMA():
+class SoftTargetHandler():
     def __init__(self, mu):
         self.mu = mu
         #    self.shadow = {}
         self.cur_epoch_out = None
         self.ema = None
         self.is_last_iter = False
+        self.epoch = 1
 
     # def register(self, name, val):
         #    self.shadow[name] = val.clone()
@@ -46,6 +47,9 @@ class EMA():
         # add latest batch output to cur_epoch_out (stacking along dim 0)
         prev_out = self.cur_epoch_out.clone()
         self.cur_epoch_out = torch.cat((prev_out, x_), 0)
+
+    def get_iter_num(self):
+        return self.cur_epoch_out.size()[0]
     
     def roll_window(self):
         if self.ema is None:
@@ -55,6 +59,7 @@ class EMA():
             self.ema = new_average
         self.cur_epoch_out = None
         self.is_last_iter = False
+        self.epoch += 1
 
     # def __call__(self, name, x):
         # assert name in self.shadow
@@ -89,12 +94,12 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         self.backbone_from = 'mmaction2'
         self.backbone = builder.build_backbone(backbone)
         self.cls_head = builder.build_head(cls_head) if cls_head else None
-
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
         
-        self.ema = EMA(0.5)
-        self.current_epoch = 0
+        self.sth = SoftTargetHandler(0.5)
+        if "burn_in" in self.train_cfg.keys():
+            self.burn_in = self.train_cfg["burn_in"]
 
         self.init_weights()
 

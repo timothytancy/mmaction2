@@ -76,7 +76,6 @@ class STGCNHead(BaseHead):
         x = x.view(x.shape[0], -1)
 
         if self.use_soft_tgts:
-
             x = self.soften_targets(x)
             # logging.debug(f"moving average softened preds: {x.size()}")
         
@@ -94,71 +93,3 @@ class STGCNHead(BaseHead):
         
         return torch.from_numpy(out).requires_grad_()
      
-    def update_ma(self, x):
-        # prev_queue = self.tensor_queue.detach()
-        # self.tensor_queue = torch.cat((prev_queue[1:], torch.unsqueeze(x, dim=0)))
-        # ma = torch.mean(self.tensor_queue, dim=0)
-        
-        prev_queue = self.tensor_queue.copy()
-        new_queue = np.ones_like(prev_queue)
-        new_queue[:-1] = prev_queue[1:]
-        new_queue[-1] = x
-        self.tensor_queue = new_queue
-        # logging.debug(f"pushing new preds to queue: {self.tensor_queue[-1]}")
-        out = np.mean(self.tensor_queue, axis=0)
-
-        return torch.from_numpy(out).requires_grad_()
-        
-        
-    
-
-
-class SoftTargetHandler():
-    """
-    Class to handle everything relating to generating soft targets:
-        - Softening predictions
-        - Maintaining (exponential) ma of previous predictions
-    Current issue with this class is that it seems to require the network to backpropagate all the way to the first iteration each time.
-    Best case is if we could just forget each previous iteration, and only store the output of the final layer. 
-    """
-    def __init__(self, window, queue, temperature, ma):
-        self.window = window
-        self.queue = queue
-        self.temperature = temperature
-        self.preds = None
-        self.ma = ma
-        assert self.window == self.queue.size(dim=0)
-
-
-    def update_ma(self):
-        # data = self.queue.detach().numpy()
-        # alpha = 2 /(self.window + 1.0)
-        # alpha_rev = 1-alpha
-        # n = data.shape[0]
-
-        # pows = alpha_rev**(np.arange(n+1))
-
-        # scale_arr = 1/pows[:-1]
-        # offset = data[0]*pows[1:]
-        # pw0 = alpha*alpha_rev**(n-1)
-
-        # mult = data*pw0*scale_arr
-        # cumsums = mult.cumsum()
-        # out = offset + cumsums*scale_arr[::-1]
-        # logging.debug(f"EMA queue size: {out.size()}")
-
-        temp_queue = self.queue
-        queue_local = torch.cat((temp_queue[1:], torch.unsqueeze(self.preds, dim=0)))
-        self.queue = queue_local
-        
-        ma = torch.mean(queue_local, dim=0)
-        return ma
-
-    def soften_preds(self, x):
-        self.preds = torch.exp(x/self.temperature)/torch.exp(self.ma/self.temperature) 
-            
-    
-        
-    
-        
-        

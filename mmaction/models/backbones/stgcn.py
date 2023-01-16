@@ -282,7 +282,4 @@ class STGCN(nn.Module):
         for gcn, importance in zip(self.st_gcn_networks, self.edge_importance):
             x, _ = gcn(x, self.A * importance)
         
-        logging.debug(f"STGCN: {x.size()}")
-
-
         return x
