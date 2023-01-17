@@ -59,7 +59,10 @@ class SoftTargetHandler():
             self.ema = new_average
         self.cur_epoch_out = None
         self.is_last_iter = False
-        self.epoch += 1
+        self.update_epoch(self.epoch + 1)
+    
+    def update_epoch(self, epoch):
+        self.epoch = epoch
 
     # def __call__(self, name, x):
         # assert name in self.shadow
