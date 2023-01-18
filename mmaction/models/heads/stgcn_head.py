@@ -75,10 +75,6 @@ class STGCNHead(BaseHead):
         x = self.fc(x)
         x = x.view(x.shape[0], -1)
 
-        if self.use_soft_tgts:
-            x = self.soften_targets(x)
-            # logging.debug(f"moving average softened preds: {x.size()}")
-        
             
         return x
 
