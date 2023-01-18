@@ -21,24 +21,24 @@ class SkeletonGCN(BaseGCN):
         
         x = self.extract_feat(skeletons)
         output = self.cls_head(x)
-        gt_labels = labels.squeeze(-1)  # these are not one-hot labels 
+        gt_labels = labels.squeeze(-1)
+        gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # convert to one-hot labels
+        mixed_output = gt_labels * 0.6 + prev_out * 0.4  # hardcoding weight temporarily
         
+        # if first iteration of epoch
+        if self.sth.cur_epoch_out is None:
+            self.sth.register(mixed_output)
+        else:
+            self.sth.concat_output(mixed_output)
+
         # block to execute after burn-in period
         if self.sth.epoch >= self.burn_in:
-            assert self.sth.ema is not None, "Allow model to burn-in for at least one epoch (burn_in>=2) before softening targets"
-            # if first iteration of epoch
-            if self.sth.cur_epoch_out is None:
-                self.sth.register(output)
-            else:
-                self.sth.concat_output(output)
-
-            logging.debug(f"logging epochs: {self.sth.cur_epoch_out.size()}")
+            # assert self.sth.ema is not None, "Allow model to burn-in for at least one epoch (burn_in>=2) before softening targets"
 
             # extract results from previous epochs
             iter_num = self.sth.get_iter_num()  # iter_num is 1-indexed
-            gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # one-hot labels
-            prev_out = self.sth.ema[iter_num]
-            gt_labels = gt_labels * 0.6 + prev_out * 0.4  
+            prev_out = self.sth.ema[iter_num-1]
+            gt_labels = mixed_output
 
         loss = self.cls_head.loss(output, gt_labels)
         losses.update(loss)
