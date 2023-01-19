@@ -19,8 +19,6 @@ class SoftTargetHandler():
         self.is_last_iter = False
         self.epoch = 1
 
-    # def register(self, name, val):
-        #    self.shadow[name] = val.clone()
     def register(self, val):
         logging.debug(f"updating outputs")
         self.cur_epoch_out = torch.unsqueeze(val.clone(), 0)
@@ -100,9 +98,11 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
         
-        self.sth = SoftTargetHandler(0.5)
-        if "burn_in" in self.train_cfg.keys():
+        self.use_soft_tgts = self.train_cfg["use_soft_tgts"]
+        if self.use_soft_tgts:
+            self.sth = SoftTargetHandler(0.5)
             self.burn_in = self.train_cfg["burn_in"]
+            self.temperature = self.train_cfg["temperature"]
 
         self.init_weights()
 

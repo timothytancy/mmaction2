@@ -6,8 +6,8 @@ import numpy as np
 
 from ..builder import HEADS
 from .base import BaseHead
-import logging
-logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
+# import logging
+# logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 
 @HEADS.register_module()
@@ -29,13 +29,10 @@ class STGCNHead(BaseHead):
     def __init__(self,
                  num_classes,
                  in_channels,
-                 use_soft_tgts,
                  loss_cls=dict(type='CrossEntropyLoss'),
                  spatial_type='avg',
                  num_person=2,
                  init_std=0.01,
-                 temperature = 1,
-                 ma_window = 10,
                  **kwargs):
         super().__init__(num_classes, in_channels, loss_cls, **kwargs)
 
@@ -44,13 +41,6 @@ class STGCNHead(BaseHead):
         self.num_classes = num_classes
         self.num_person = num_person
         self.init_std = init_std
-        self.use_soft_tgts = use_soft_tgts
-        self.ma_window = ma_window
-        self.temperature = temperature
-
-        self.tensor_queue = np.zeros((self.ma_window, 64, self.num_classes)) 
-        self.ma = np.full((64, self.num_classes), 1/self.num_classes)
-        self.prev_softened_x = None
 
         self.pool = None
         if self.spatial_type == 'avg':

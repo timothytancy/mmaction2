@@ -8,8 +8,8 @@ from mmcv.utils import _BatchNorm
 from ...utils import get_root_logger
 from ..builder import BACKBONES
 from ..skeleton_gcn.utils import Graph
-import logging
-logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
+# import logging
+# logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 def zero(x):
     """return zero."""
