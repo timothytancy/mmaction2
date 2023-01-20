@@ -10,7 +10,7 @@ model = dict(
         num_classes=60,
         in_channels=256,
         loss_cls=dict(type='CrossEntropyLoss')),
-    train_cfg=dict(burn_in=2, temperature=1, use_soft_tgts=False),
+    train_cfg=dict(burn_in=2, temperature=1, use_soft_tgts=True),
     test_cfg=None)
 
 track_epochs = True
@@ -70,7 +70,7 @@ lr_config = dict(policy='step', step=[10, 50])
 total_epochs = 80
 checkpoint_config = dict(interval=5)
 evaluation = dict(interval=5, metrics=['top_k_accuracy'])
-log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
+log_config = dict(interval=5, hooks=[dict(type='TextLoggerHook')])
 
 # runtime settings
 dist_params = dict(backend='nccl')

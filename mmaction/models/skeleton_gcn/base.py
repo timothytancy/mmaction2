@@ -5,6 +5,7 @@ from collections import OrderedDict
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .. import builder
 import logging
@@ -226,16 +227,15 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         label = data_batch['label']
         # logging.debug(f"training skeletons size: {skeletons.size()}")
 
-        # logging.debug(f"training label: {label}")
-
         label = label.squeeze(-1)
 
+        # added this
+        label = F.one_hot(label, num_classes=self.cls_head.num_classes)
         losses = self(skeletons, label, return_loss=True)
 
         loss, log_vars = self._parse_losses(losses)
         outputs = dict(
             loss=loss, log_vars=log_vars, num_samples=len(skeletons.data))
-        # logging.debug(f"training outputs: {outputs}")
         return outputs
 
     def val_step(self, data_batch, optimizer, **kwargs):
@@ -248,6 +248,8 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
         skeletons = data_batch['keypoint']
         label = data_batch['label']
         # logging.debug(f"validation label: {label}")
+        # added this
+        label = F.one_hot(label, num_classes=self.cls_head.num_classes)
 
         losses = self(skeletons, label, return_loss=True)
 

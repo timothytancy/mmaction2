@@ -4,17 +4,14 @@ from .base import BaseGCN
 import torch
 import torch.nn.functional as F
 import numpy as np 
-# import logging
-# logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
+import logging
+logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 
 @RECOGNIZERS.register_module()
 class SkeletonGCN(BaseGCN):
     """Spatial temporal graph convolutional networks."""
     
-    def update_epoch(self, epoch):
-        self.current_epoch = epoch
-
     def forward_train(self, skeletons, labels, **kwargs):
         """Defines the computation performed at every call when training."""
         assert self.with_cls_head
@@ -23,7 +20,8 @@ class SkeletonGCN(BaseGCN):
         x = self.extract_feat(skeletons)
         output = self.cls_head(x)
         gt_labels = labels.squeeze(-1)
-        gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # convert to one-hot labels
+        logging.debug(f"gt_labels: {gt_labels}")
+        # gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # convert to one-hot labels
 
         if self.use_soft_tgts:
             # update soft target logs (for next epoch)

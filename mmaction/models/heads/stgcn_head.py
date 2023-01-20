@@ -68,14 +68,4 @@ class STGCNHead(BaseHead):
             
         return x
 
-    def soften_targets(self, x):
-        # """
-        # Takes in a tensor as input, and outputs softened distribution as an np array.
-        # """
-        x_np = x.detach().numpy()
-        x_exp = np.exp(x_np/self.temperature)
-        x_sum = np.repeat(np.sum(x_exp, axis=1)[:, np.newaxis], self.num_classes, axis=1) # sum over class dim then repeat again to match num_classes
-        out = x_exp/x_sum
-        
-        return torch.from_numpy(out).requires_grad_()
      
