@@ -42,6 +42,11 @@ class SkeletonGCN(BaseGCN):
                 # for current epoch, target is made using predictions from previous epochs
                 iter_num = self.sth.get_iter_num()  # iter_num is 1-indexed
                 prev_out = self.sth.ema[iter_num-1]
+                
+                # for last iteration in epoch, chop previous padded saved outputs down to size
+                if gt_labels.size() != prev_out.size():
+                    prev_out = prev_out[:gt_labels.size()[0]]
+                    
                 gt_labels = gt_labels * 0.6 + prev_out * 0.4  # mix previous preds with label
             
             # if we are in the first iter of new epoch:
@@ -52,8 +57,6 @@ class SkeletonGCN(BaseGCN):
         # compute loss of hard outputs against soft labels
         loss = self.cls_head.loss(output, gt_labels)  
         losses.update(loss)
-
-
 
         return losses
 
@@ -75,5 +78,6 @@ class SkeletonGCN(BaseGCN):
         x_sum = np.repeat(np.sum(x_exp, axis=1)[:, np.newaxis], self.cls_head.num_classes, axis=1) # sum over class dim then repeat again to match num_classes
         out = x_exp/x_sum
         
-        return torch.from_numpy(out).requires_grad_()
+        return torch.from_numpy(out)
+        # return torch.from_numpy(out).requires_grad_()
     

@@ -20,16 +20,13 @@ class SoftTargetHandler():
         self.epoch = 1
 
     def register(self, val):
-        logging.debug(f"updating outputs")
         self.cur_epoch_out = torch.unsqueeze(val.clone(), 0)
 
     def concat_output(self, x):
         x_ = x.clone()
 
         # if x not same size as self.output, pad tensor to match size. 
-        logging.debug(f"x size: {x_.size()[0]}")
-        logging.debug(f"prev sizes: {self.cur_epoch_out.size()[1]}")
-        
+        # this is done so that we can stack outputs from the whole epoch by iteration
         if x_.size()[0] != self.cur_epoch_out.size()[1]:
             self.is_last_iter = True
             tgt_len = self.cur_epoch_out.size()[1]
@@ -39,12 +36,19 @@ class SoftTargetHandler():
             logging.debug(f"x_ before padding: {x_.size()}")
             logging.debug(f"padding: {padding.size()}")
             x_ = torch.cat((x_, padding), dim=0)
+            x_ = self.pad_to_len(x_, )
             
         x_ = torch.unsqueeze(x_, 0)
 
         # add latest batch output to cur_epoch_out (stacking along dim 0)
         prev_out = self.cur_epoch_out.clone()
         self.cur_epoch_out = torch.cat((prev_out, x_), 0)
+
+    def pad_to_len(tensor, tgt_len):
+        num_classes = self.cur_epoch_out.size()[-1]
+        padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
+        return torch.cat((x_, padding), dim=0)
+        
 
     def get_iter_num(self):
         return self.cur_epoch_out.size()[0]
