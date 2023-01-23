@@ -20,7 +20,6 @@ class SkeletonGCN(BaseGCN):
         x = self.extract_feat(skeletons)
         output = self.cls_head(x)
         gt_labels = labels.squeeze(-1)
-        logging.debug(f"gt_labels: {gt_labels}")
         # gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # convert to one-hot labels
 
         if self.use_soft_tgts:

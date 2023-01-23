@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 import torch
 import torch.nn as nn
 
-from ...core import top_k_accuracy
+from ...core import top_k_accuracy, top_k_accuracy_soft
 from ..builder import build_loss
 
 
@@ -87,18 +87,26 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
         """
         losses = dict()
         if labels.shape == torch.Size([]):
+            print("in 1")
             labels = labels.unsqueeze(0)
+
         elif labels.dim() == 1 and labels.size()[0] == self.num_classes \
                 and cls_score.size()[0] == 1:
             # Fix a bug when training with soft labels and batch size is 1.
             # When using soft labels, `labels` and `cls_socre` share the same
             # shape.
             labels = labels.unsqueeze(0)
+            print("in 2")
 
-        if not self.multi_class and cls_score.size() != labels.size():
-            top_k_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
-                                       labels.detach().cpu().numpy(),
-                                       self.topk)
+        if not self.multi_class:
+            if cls_score.size() != labels.size():
+                top_k_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
+                                        labels.detach().cpu().numpy(),
+                                        self.topk)
+            else:  # if using soft label, use custom accuracy function
+                top_k_acc = top_k_accuracy_soft(cls_score.detach().cpu().numpy(),
+                                        labels.detach().cpu().numpy(),
+                                        self.topk)
             for k, a in zip(self.topk, top_k_acc):
                 losses[f'top{k}_acc'] = torch.tensor(
                     a, device=cls_score.device)

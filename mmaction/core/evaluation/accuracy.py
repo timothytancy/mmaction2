@@ -146,6 +146,32 @@ def top_k_accuracy(scores, labels, topk=(1, )):
     labels = np.array(labels)[:, np.newaxis]
     for k in topk:
         max_k_preds = np.argsort(scores, axis=1)[:, -k:][:, ::-1]
+        # max_k_preds will not ever == labels, because the labels are not by index. 
+        # this can be fixed fairly easily, by getting the index of the maximum value
+        match_array = np.logical_or.reduce(max_k_preds == labels, axis=1)
+        topk_acc_score = match_array.sum() / match_array.shape[0]
+        res.append(topk_acc_score)
+
+    return res
+
+def top_k_accuracy_soft(scores, soft_labels, topk=(1, )):
+    """Calculate top k accuracy score.
+
+    Args:
+        scores (list[np.ndarray]): Prediction scores for each class.
+        labels (list[int]): Ground truth labels.
+        topk (tuple[int]): K value for top_k_accuracy. Default: (1, ).
+
+    Returns:
+        list[float]: Top k accuracy score for each k.
+    """
+    res = []
+    labels = np.argmax(soft_labels, axis=1)
+    labels = np.array(labels)[:, np.newaxis]
+    for k in topk:
+        max_k_preds = np.argsort(scores, axis=1)[:, -k:][:, ::-1]
+        # max_k_preds will not ever == labels, because the labels are not by index. 
+        # this can be fixed fairly easily, by getting the index of the maximum value
         match_array = np.logical_or.reduce(max_k_preds == labels, axis=1)
         topk_acc_score = match_array.sum() / match_array.shape[0]
         res.append(topk_acc_score)
