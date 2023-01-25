@@ -8,8 +8,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .. import builder
-import logging
-logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
+# import logging
+# logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 class SoftTargetHandler():
     def __init__(self, mu):
@@ -32,10 +32,7 @@ class SoftTargetHandler():
             self.is_last_iter = True
             tgt_len = self.cur_epoch_out.size()[1]
             num_classes = self.cur_epoch_out.size()[-1]
-            logging.debug(f"num_classes: {num_classes}")
             padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
-            logging.debug(f"x_ before padding: {x_.size()}")
-            logging.debug(f"padding: {padding.size()}")
             x_ = torch.cat((x_, padding), dim=0)
             x_ = self.pad_to_len(x_, )
             
@@ -45,7 +42,7 @@ class SoftTargetHandler():
         prev_out = self.cur_epoch_out.clone()
         self.cur_epoch_out = torch.cat((prev_out, x_), 0)
 
-    def pad_to_len(tensor, tgt_len):
+    def pad_to_len(self, tensor, tgt_len):
         num_classes = self.cur_epoch_out.size()[-1]
         padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
         return torch.cat((x_, padding), dim=0)

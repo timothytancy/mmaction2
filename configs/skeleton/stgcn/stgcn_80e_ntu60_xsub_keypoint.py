@@ -70,7 +70,7 @@ lr_config = dict(policy='step', step=[10, 50])
 total_epochs = 80
 checkpoint_config = dict(interval=5)
 evaluation = dict(interval=5, metrics=['top_k_accuracy'])
-log_config = dict(interval=5, hooks=[dict(type='TextLoggerHook')])
+log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
 
 # runtime settings
 dist_params = dict(backend='nccl')

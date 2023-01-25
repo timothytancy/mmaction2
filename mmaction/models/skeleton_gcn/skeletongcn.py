@@ -4,8 +4,8 @@ from .base import BaseGCN
 import torch
 import torch.nn.functional as F
 import numpy as np 
-import logging
-logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
+# import logging
+# logging.basicConfig(filename='sample_output1.log', level=logging.DEBUG)
 
 
 @RECOGNIZERS.register_module()
