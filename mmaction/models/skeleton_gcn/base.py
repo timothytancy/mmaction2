@@ -34,7 +34,7 @@ class SoftTargetHandler():
             num_classes = self.cur_epoch_out.size()[-1]
             padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
             x_ = torch.cat((x_, padding), dim=0)
-            x_ = self.pad_to_len(x_, )
+            x_ = self.pad_to_len(x_, tgt_len)
             
         x_ = torch.unsqueeze(x_, 0)
 
@@ -44,8 +44,8 @@ class SoftTargetHandler():
 
     def pad_to_len(self, tensor, tgt_len):
         num_classes = self.cur_epoch_out.size()[-1]
-        padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
-        return torch.cat((x_, padding), dim=0)
+        padding = torch.zeros(tgt_len - tensor.size()[0], num_classes)
+        return torch.cat((tensor, padding), dim=0)
         
 
     def get_iter_num(self):
