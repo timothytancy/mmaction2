@@ -67,7 +67,6 @@ def plot_curve(log_dicts, args):
                 num_iters_per_epoch = iters[-1]
                 if args.iters_per_epoch is not None:
                     xs.append((epoch-1) + (1/args.iters_per_epoch[i]) * np.array(iters))
-                    print(args.iters_per_epoch[i])
                 else:
                     xs.append(np.array(iters) + (epoch - 1) * num_iters_per_epoch)
                 ys.append(np.array(log_dict[epoch][metric][:len(iters)]))
