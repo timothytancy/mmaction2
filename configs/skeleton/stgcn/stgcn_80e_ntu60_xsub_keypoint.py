@@ -10,7 +10,7 @@ model = dict(
         num_classes=60,
         in_channels=256,
         loss_cls=dict(type='CrossEntropyLoss')),
-    train_cfg=dict(burn_in=2, temperature=1, use_soft_tgts=True),
+    train_cfg=dict(use_soft_tgts=True, burn_in=2, temperature=1, beta=0.6, gamma=0.6),
     test_cfg=None)
 
 track_epochs = True

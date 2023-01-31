@@ -87,7 +87,6 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
         """
         losses = dict()
         if labels.shape == torch.Size([]):
-            print("in 1")
             labels = labels.unsqueeze(0)
 
         elif labels.dim() == 1 and labels.size()[0] == self.num_classes \
@@ -96,7 +95,6 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
             # When using soft labels, `labels` and `cls_socre` share the same
             # shape.
             labels = labels.unsqueeze(0)
-            print("in 2")
 
         if not self.multi_class:
             if cls_score.size() != labels.size():

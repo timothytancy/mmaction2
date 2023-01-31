@@ -45,6 +45,11 @@ def plot_curve(log_dicts, args):
     assert len(legend) == (len(args.json_logs) * len(args.keys))
     metrics = args.keys
 
+    if args.iters_per_epoch is not None:
+        xlabel = "epoch"
+    else:
+        xlabel = "iter"
+
     num_metrics = len(metrics)
     for i, log_dict in enumerate(log_dicts):
         epochs = list(log_dict.keys())
@@ -60,11 +65,15 @@ def plot_curve(log_dicts, args):
                 if log_dict[epoch]['mode'][-1] == 'val':
                     iters = iters[:-1]
                 num_iters_per_epoch = iters[-1]
-                xs.append(np.array(iters) + (epoch - 1) * num_iters_per_epoch)
+                if args.iters_per_epoch is not None:
+                    xs.append((epoch-1) + (1/args.iters_per_epoch[i]) * np.array(iters))
+                    print(args.iters_per_epoch[i])
+                else:
+                    xs.append(np.array(iters) + (epoch - 1) * num_iters_per_epoch)
                 ys.append(np.array(log_dict[epoch][metric][:len(iters)]))
             xs = np.concatenate(xs)
             ys = np.concatenate(ys)
-            plt.xlabel('iter')
+            plt.xlabel(xlabel)
             plt.plot(xs, ys, label=legend[i * num_metrics + j], linewidth=0.5)
             plt.legend()
         if args.title is not None:
@@ -103,6 +112,13 @@ def add_plot_parser(subparsers):
     parser_plt.add_argument(
         '--style', type=str, default='dark', help='style of plt')
     parser_plt.add_argument('--out', type=str, default=None)
+    parser_plt.add_argument(
+        '--iters-per-epoch', 
+        type=int, 
+        default=None,
+        nargs='*',
+        help='number of iterations per epoch, for plotting with epochs on x-axis'
+    )
 
 
 def add_time_parser(subparsers):

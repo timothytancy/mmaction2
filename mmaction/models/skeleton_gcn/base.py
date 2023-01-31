@@ -105,6 +105,8 @@ class BaseGCN(nn.Module, metaclass=ABCMeta):
             self.sth = SoftTargetHandler(0.5)
             self.burn_in = self.train_cfg["burn_in"]
             self.temperature = self.train_cfg["temperature"]
+            self.beta = self.train_cfg["beta"]
+            self.gamma = self.train_cfg["gamma"]
 
         self.init_weights()
 

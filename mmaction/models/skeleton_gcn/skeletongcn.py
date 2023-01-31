@@ -24,7 +24,7 @@ class SkeletonGCN(BaseGCN):
 
         if self.use_soft_tgts:
             # update soft target logs (for next epoch)
-            mixed_output = gt_labels * 0.6 + self.soften_targets(output) * 0.4  # hardcoding weight temporarily
+            mixed_output = gt_labels * self.beta + self.soften_targets(output) * (1-self.beta)  # hardcoding weight temporarily
 
             # if first iteration of epoch
             if self.sth.cur_epoch_out is None:
@@ -44,7 +44,7 @@ class SkeletonGCN(BaseGCN):
                 if gt_labels.size() != prev_out.size():
                     prev_out = prev_out[:gt_labels.size()[0]]
                     
-                gt_labels = gt_labels * 0.6 + prev_out * 0.4  # mix previous preds with label
+                gt_labels = gt_labels * self.gamma + prev_out * (1-self.gamma)  # mix previous preds with label
             
             # if we are in the first iter of new epoch:
             if self.sth.is_last_iter:
