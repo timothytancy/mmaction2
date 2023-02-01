@@ -14,6 +14,6 @@
 conda init bash
 conda activate open-mmlab
 python tools/train.py configs/skeleton/stgcn/stgcn_80e_ntu60_xsub_keypoint.py \
-    --work-dir work_dirs/train_1gpu \
+    --work-dir work_dirs/burn2_temp2_b6_g6 \
     --validate --seed 0 --deterministic \
-    --cfg-options gpu_ids="[0]"
+    --cfg-options gpu_ids="[0, 1, 2, 3]"

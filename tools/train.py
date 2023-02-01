@@ -20,7 +20,6 @@ from mmaction.models import build_model
 from mmaction.utils import (collect_env, get_root_logger,
                             register_module_hooks, setup_multi_processes)
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a recognizer')
     parser.add_argument('config', help='train config file path')
@@ -88,6 +87,7 @@ def main():
     cfg = Config.fromfile(args.config)
 
     cfg.merge_from_dict(args.cfg_options)
+
 
     # set multi-process settings
     setup_multi_processes(cfg)

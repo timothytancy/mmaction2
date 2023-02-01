@@ -1,3 +1,5 @@
+train_cfg = dict(use_soft_tgts=True, burn_in=2, temperature=2, beta=0.6, gamma=0.6)
+print(str(train_cfg))
 model = dict(
     type='SkeletonGCN',
     backbone=dict(
@@ -10,7 +12,7 @@ model = dict(
         num_classes=60,
         in_channels=256,
         loss_cls=dict(type='CrossEntropyLoss')),
-    train_cfg=dict(use_soft_tgts=True, burn_in=2, temperature=1, beta=0.6, gamma=0.6),
+    train_cfg=train_cfg,
     test_cfg=None)
 
 track_epochs = True
@@ -70,7 +72,11 @@ lr_config = dict(policy='step', step=[10, 50])
 total_epochs = 80
 checkpoint_config = dict(interval=5)
 evaluation = dict(interval=5, metrics=['top_k_accuracy'])
-log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
+log_config = dict(interval=1, hooks=[dict(type='TextLoggerHook'), 
+                                     dict(type='WandbLoggerHook',
+                                     init_kwargs={'project': 'fyp',
+                                                  'config': train_cfg,
+                                                  'name': "temp2_beta0.6_gamma0.6"})])
 
 # runtime settings
 dist_params = dict(backend='nccl')
