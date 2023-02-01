@@ -1,5 +1,5 @@
 train_cfg = dict(use_soft_tgts=True, burn_in=2, temperature=2, beta=0.6, gamma=0.6)
-print(str(train_cfg))
+name = "burn2_temp2_beta0.6_gamma0.6"
 model = dict(
     type='SkeletonGCN',
     backbone=dict(
@@ -72,16 +72,16 @@ lr_config = dict(policy='step', step=[10, 50])
 total_epochs = 80
 checkpoint_config = dict(interval=5)
 evaluation = dict(interval=5, metrics=['top_k_accuracy'])
-log_config = dict(interval=1, hooks=[dict(type='TextLoggerHook'), 
+log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook'), 
                                      dict(type='WandbLoggerHook',
                                      init_kwargs={'project': 'fyp',
                                                   'config': train_cfg,
-                                                  'name': "temp2_beta0.6_gamma0.6"})])
+                                                  'name': name})])
 
 # runtime settings
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/stgcn_80e_ntu60_xsub_keypoint/'
+work_dir = './work_dirs/' + name + "/"
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
