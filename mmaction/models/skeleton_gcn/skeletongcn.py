@@ -33,7 +33,9 @@ class SkeletonGCN(BaseGCN):
 
             # block to execute after burn-in period
             if self.sth.epoch >= self.burn_in:
-                assert self.sth.ema is not None, "Allow model to burn-in for at least one epoch (burn_in>=2) before softening targets"
+                ERR_MSG = "Allow model to burn-in for at least one epoch (burn_in>=2) before softening targets"
+
+                assert self.sth.ema is not None, ERR_MSG
                 
                 # for current epoch, target is made using predictions from previous epochs
                 iter_num = self.sth.get_iter_num()  # iter_num is 1-indexed
