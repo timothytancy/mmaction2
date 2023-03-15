@@ -13,8 +13,10 @@
 
 conda activate open-mmlab
 
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
+
 python tools/test.py configs/skeleton/stgcn/stgcn_80e_ntu60_xsub_keypoint.py \
-    /home/FYP/ttan063/mmaction2/work_dirs/stgcn_80e_ntu60_xsub_keypoint/epoch_50.pth --eval top_k_accuracy mean_class_accuracy \
-    --out results/result.pkl --cfg-options gpu_ids="[0, 1, 2, 3]"
+    work_dirs/default/best_top1_acc_epoch_80.pth --eval top_k_accuracy mean_class_accuracy \
+    --out results/default.pkl
 
     

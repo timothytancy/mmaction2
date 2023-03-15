@@ -14,7 +14,6 @@ from .. import builder
 class SoftTargetHandler():
     def __init__(self, mu):
         self.mu = mu
-        #    self.shadow = {}
         self.cur_epoch_out = None
         self.ema = None
         self.is_last_iter = False
@@ -25,17 +24,12 @@ class SoftTargetHandler():
 
     def concat_output(self, x):
         x_ = x.clone()
-
         # if x not same size as self.output, pad tensor to match size. 
         # this is done so that we can stack outputs from the whole epoch by iteration
         if x_.size()[0] != self.cur_epoch_out.size()[1]:
             self.is_last_iter = True
             tgt_len = self.cur_epoch_out.size()[1]
-            num_classes = self.cur_epoch_out.size()[-1]
-            padding = torch.zeros(tgt_len - x_.size()[0], num_classes)
-            x_ = torch.cat((x_, padding), dim=0)
             x_ = self.pad_to_len(x_, tgt_len)
-            
         x_ = torch.unsqueeze(x_, 0)
 
         # add latest batch output to cur_epoch_out (stacking along dim 0)
@@ -44,7 +38,7 @@ class SoftTargetHandler():
 
     def pad_to_len(self, tensor, tgt_len):
         num_classes = self.cur_epoch_out.size()[-1]
-        padding = torch.zeros(tgt_len - tensor.size()[0], num_classes)
+        padding = torch.zeros(tgt_len - tensor.size()[0], num_classes).cuda()
         return torch.cat((tensor, padding), dim=0)
         
 
@@ -64,13 +58,6 @@ class SoftTargetHandler():
     def update_epoch(self, epoch):
         self.epoch = epoch
 
-    # def __call__(self, name, x):
-        # assert name in self.shadow
-        # new_average = (1.0 - self.mu) * x + self.mu * self.shadow[name]
-        # self.shadow[name] = new_average.clone()
-        # return new_average
-
-        # for now, do not implement ema, just use the exact previous value
     def __call__(self, idx):
         return self.ema[idx]
         
