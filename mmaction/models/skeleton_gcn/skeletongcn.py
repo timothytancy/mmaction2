@@ -19,15 +19,11 @@ class SkeletonGCN(BaseGCN):
         
         x = self.extract_feat(skeletons)
         output = self.cls_head(x)
-        logging.debug(output)
         gt_labels = labels.squeeze(-1)
-        # gt_labels = F.one_hot(gt_labels, num_classes=self.cls_head.num_classes)  # convert to one-hot labels
 
         if self.use_soft_tgts:
             # update soft target logs (for next epoch)
             mixed_output = gt_labels * self.beta + self.soften_targets(output, self.temperature) * (1-self.beta) 
-            # mixed_output = gt_labels * self.beta + output * (1-self.beta) 
-            # mixed_output = output.clone()
 
             # if first iteration of epoch
             if self.sth.cur_epoch_out is None:
@@ -47,32 +43,11 @@ class SkeletonGCN(BaseGCN):
                 if gt_labels.size() != prev_out.size():
                     prev_out = prev_out[:gt_labels.size()[0]]
 
-                ## THIS BLOCK OF CODE IS ADDED TO ADHERE TO PAPER ###
-                # ema = self.beta * prev_out + (1-self.beta)*output
-                # gt_labels = gt_labels * self.gamma + ema * (1-self.gamma)  # mix previous preds with label
-                ### END HERE###
-
-                    
-                # uncomment to restore
                 gt_labels = gt_labels * self.gamma + prev_out * (1-self.gamma)  # mix previous preds with label
             
             # if we are in the first iter of new epoch:
             if self.sth.is_last_iter:
-                try:
-                    logging.INFO(f"RAW OUTPUT: {output.size()}")
-                except Exception as e:
-                    logging.debug(f"Raw output issue: {e}")
-                try:
-                    logging.INFO(f"MIXED OUTPUT: {mixed_output}")
-                except Exception as e:
-                    logging.debug(f"Mixed output issue: {e}")
-                try:
-                    logging.INFO(f"EMA OUTPUT: {self.sth.ema}")
-                except Exception as e:
-                    logging.debug(f"EMA output issue: {e}")
-                # logging.debug(f"rolling window... ")
                 self.sth.roll_window()
-                
 
         # compute loss of hard outputs against soft labels
         loss = self.cls_head.loss(output, gt_labels)  
